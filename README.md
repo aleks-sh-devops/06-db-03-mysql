@@ -382,12 +382,90 @@ mysql> select count(*) from orders where price >300;
 1 row in set (0.00 sec)
 
 mysql> show profiles;
+mysql> show profiles;
 +----------+------------+----------------------------------------------+
 | Query_ID | Duration   | Query                                        |
 +----------+------------+----------------------------------------------+
-|        1 | 0.00107425 | select count(*) from orders where price >300 |
-|        2 | 0.05756375 | alter table orders engine = MyISAM           |
-|        3 | 0.00119475 | select count(*) from orders where price >300 |
+|        1 | 0.00133950 | select count(*) from orders where price >300 |
+|        2 | 0.03710725 | alter table orders engine = MyISAM           |
+|        3 | 0.00128575 | select count(*) from orders where price >300 |
 +----------+------------+----------------------------------------------+
 3 rows in set, 1 warning (0.00 sec)
+```
+
+## Задача 4 
+
+Изучите файл `my.cnf` в директории /etc/mysql.
+
+Измените его согласно ТЗ (движок InnoDB):
+- Скорость IO важнее сохранности данных
+- Нужна компрессия таблиц для экономии места на диске
+- Размер буффера с незакомиченными транзакциями 1 Мб
+- Буффер кеширования 30% от ОЗУ
+- Размер файла логов операций 100 Мб
+
+Приведите в ответе измененный файл `my.cnf`.
+
+## Ответ  
+Смотрим память:  
+```
+bash-4.4# cat /proc/meminfo | grep 'MemTotal'
+MemTotal:        4025360 kB
+```
+
+Внесли измерения:  
+```
+bash-4.4# cat /etc/my.cnf
+
+# For advice on how to change settings please see
+# http://dev.mysql.com/doc/refman/8.0/en/server-configuration-defaults.html
+
+[mysqld]
+#
+# Remove leading # and set to the amount of RAM for the most important data
+# cache in MySQL. Start at 70% of total RAM for dedicated server, else 10%.
+# innodb_buffer_pool_size = 128M
+#
+# Remove leading # to turn on a very important data integrity option: logging
+# changes to the binary log between backups.
+# log_bin
+#
+# Remove leading # to set options mainly useful for reporting servers.
+# The server defaults are faster for transactions and fast SELECTs.
+# Adjust sizes as needed, experiment to find the optimal values.
+# join_buffer_size = 128M
+# sort_buffer_size = 2M
+# read_rnd_buffer_size = 2M
+
+# Remove leading # to revert to previous value for default_authentication_plugin,
+# this will increase compatibility with older clients. For background, see:
+# https://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html#sysvar_default_authentication_plugin
+# default-authentication-plugin=mysql_native_password
+skip-host-cache
+skip-name-resolve
+datadir=/var/lib/mysql
+socket=/var/run/mysqld/mysqld.sock
+secure-file-priv=/var/lib/mysql-files
+user=mysql
+
+# Speed=> 0
+innodb_flush_log_at_trx_commit=0
+
+# Szatie
+innodb_file_format=Barracuda
+
+# buffer => 1MB
+innodb_log_buffer_size=1M
+
+# Cache
+key_buffer_size=1300М
+
+# Ramer logov
+max_binlog_size=100M
+
+pid-file=/var/run/mysqld/mysqld.pid
+[client]
+socket=/var/run/mysqld/mysqld.sock
+
+!includedir /etc/mysql/conf.d/
 ```
