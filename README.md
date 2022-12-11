@@ -303,3 +303,91 @@ mysql> SELECT * FROM INFORMATION_SCHEMA.USER_ATTRIBUTES WHERE USER='test';
 1 row in set (0.01 sec)
 ```
 
+## Задача 3
+
+Установите профилирование `SET profiling = 1`.
+Изучите вывод профилирования команд `SHOW PROFILES;`.
+
+Исследуйте, какой `engine` используется в таблице БД `test_db` и **приведите в ответе**.
+
+Измените `engine` и **приведите время выполнения и запрос на изменения из профайлера в ответе**:
+- на `MyISAM`
+- на `InnoDB`
+
+## Ответ  
+Включаем профилирование:  
+```
+mysql> SET profiling = 1;
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+
+
+mysql> SHOW VARIABLES like 'profiling';
++---------------+-------+
+| Variable_name | Value |
++---------------+-------+
+| profiling     | ON    |
++---------------+-------+
+1 row in set (0.02 sec)
+```
+
+Смотрим поисковый движок по-умолчанию:  
+```
+SHOW VARIABLES like 'default_storage_engine';
+
+mysql> SHOW VARIABLES like 'default_storage_engine';
++------------------------+--------+
+| Variable_name          | Value  |
++------------------------+--------+
+| default_storage_engine | InnoDB |
++------------------------+--------+
+1 row in set (0.01 sec)
+```
+
+Коннектимся к нашей БД  
+```
+mysql> connect test_db
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Connection id:    14
+Current database: test_db
+```
+
+Делаем Запрос из задания 1:  
+```
+mysql> select count(*) from orders where price >300;
++----------+
+| count(*) |
++----------+
+|        1 |
++----------+
+1 row in set (0.00 sec)
+```
+
+Меняем InnoDB на MyISAM:  
+```
+mysql> alter table orders engine = MyISAM;
+Query OK, 5 rows affected (0.05 sec)
+Records: 5  Duplicates: 0  Warnings: 0
+```
+
+Делаем тот же запос и смотрим результат:  
+```
+mysql> select count(*) from orders where price >300;
++----------+
+| count(*) |
++----------+
+|        1 |
++----------+
+1 row in set (0.00 sec)
+
+mysql> show profiles;
++----------+------------+----------------------------------------------+
+| Query_ID | Duration   | Query                                        |
++----------+------------+----------------------------------------------+
+|        1 | 0.00107425 | select count(*) from orders where price >300 |
+|        2 | 0.05756375 | alter table orders engine = MyISAM           |
+|        3 | 0.00119475 | select count(*) from orders where price >300 |
++----------+------------+----------------------------------------------+
+3 rows in set, 1 warning (0.00 sec)
+```
