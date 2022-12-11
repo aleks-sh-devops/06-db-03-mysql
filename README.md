@@ -17,7 +17,7 @@
 
 В следующих заданиях мы будем продолжать работу с данным контейнером.
 
-
+## Ответ  
 Создаем вольюм и запускаем контейнер:  
 ```
 docker volume create volume_mysql && \
@@ -263,4 +263,43 @@ mysql> select * from orders where price > 300;
 mysql>
 ```
 Такой дружелюбной до восстановления эта БД точно не была)  
+
+## Задача 2
+
+Создайте пользователя test в БД c паролем test-pass, используя:
+- плагин авторизации mysql_native_password
+- срок истечения пароля - 180 дней 
+- количество попыток авторизации - 3 
+- максимальное количество запросов в час - 100
+- аттрибуты пользователя:
+    - Фамилия "Pretty"
+    - Имя "James"
+
+Предоставьте привелегии пользователю `test` на операции SELECT базы `test_db`.
+    
+Используя таблицу INFORMATION_SCHEMA.USER_ATTRIBUTES получите данные по пользователю `test` и 
+**приведите в ответе к задаче**.
+
+## Ответ  
+```
+mysql> CREATE USER 'test'@'localhost' IDENTIFIED BY 'test-pass';
+Query OK, 0 rows affected (0.03 sec)
+
+mysql> ALTER USER 'test'@'localhost' ATTRIBUTE '{"fname":"James", "lname":"Pretty"}';
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> ALTER USER 'test'@'localhost' IDENTIFIED BY 'test-pass' WITH MAX_QUERIES_PER_HOUR 100 PASSWORD EXPIRE INTERVAL 180 DAY FAILED_LOGIN_ATTEMPTS 3 PASSWORD_LOCK_TIME 2;
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> GRANT Select ON test_db.orders TO 'test'@'localhost';
+Query OK, 0 rows affected, 1 warning (0.01 sec)
+
+mysql> SELECT * FROM INFORMATION_SCHEMA.USER_ATTRIBUTES WHERE USER='test';
++------+-----------+---------------------------------------+
+| USER | HOST      | ATTRIBUTE                             |
++------+-----------+---------------------------------------+
+| test | localhost | {"fname": "James", "lname": "Pretty"} |
++------+-----------+---------------------------------------+
+1 row in set (0.01 sec)
+```
 
